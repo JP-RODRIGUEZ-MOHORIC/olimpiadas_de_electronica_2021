@@ -11,7 +11,7 @@ EthernetServer server(80);
 //Variables del sensor de CO2
 int CO2;
 int mq135 = A0;
-int ventilacion;
+bool ventilacion;
 
 //variables del keypad
 
@@ -76,12 +76,17 @@ void loop()
   Serial.print(CO2);
   Serial.print("    voltaje:");
   Serial.println(voltaje);
-  delay(1000);}
-  if(CO2 >= 500){
-    ventilacion = 1;
-  }else if(CO2 < 500){
-    ventilacion = 0;
+  delay(1000);
   }
+  
+//  if(CO2 >= 500){
+//    ventilacion = 1;
+//  }else if(CO2 < 500){
+//    ventilacion = 0;
+//  }
+
+   ventilacion = CO2 >= 500; //si la condición es verdadera, el resultado de ventilacion será true, caso contrario false.
+  
   if(DEBUG){
   Serial.println(ventilacion);
   }
