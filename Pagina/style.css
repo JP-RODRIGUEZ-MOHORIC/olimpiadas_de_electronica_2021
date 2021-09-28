@@ -1,0 +1,47 @@
+
+body{
+    background-color: #333;
+    color: #fff;
+}
+
+
+
+/* Panel de Control */
+
+#panel_control{
+    display: flex; justify-content: space-between; height: 80vh;
+}
+
+/* On / Off */
+
+.on_off{
+    text-align: center; width: 40%; padding-top: 100px; border-bottom: 2px solid white;
+    
+}
+
+.on_off_title{
+    font-size: 40px; font-weight: bold;
+    
+}
+.boton{
+    display: inline-block; border: 2px solid black; border-radius: 10px;font-size: 50px;  width: 200px; height: 100px; color: black; background-color: #fff;
+}
+
+.boton p{
+    margin-top: 18px;
+}
+
+/* Datos */
+
+.datos{
+    display: flex; flex-direction: column; text-align: center; margin-right: auto; margin-left: auto; font-size: 25px; width: 100%; border-left: 2px solid white;  border-bottom: 2px solid white;
+}
+
+
+.datos_result{
+    display: inline-block; border: 2px solid black; border-radius: 10px; padding: 5px; width: 100px; color: black; background-color: #fff;
+}
+
+.refresh{
+    display: inline-block; text-decoration: none; color: white; font-size: 20px; padding: 20px; border: 2px solid white;  margin-top: 15px; width:97%; text-align: center; background-color: black;
+}
