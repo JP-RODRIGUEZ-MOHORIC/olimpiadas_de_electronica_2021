@@ -12,6 +12,7 @@ EthernetServer server(80);
 int CO2;
 int mq135 = A0;
 bool ventilacion;
+#define CO2_LIMITE 500
 
 //variables del keypad
 
@@ -85,7 +86,7 @@ void loop()
 //    ventilacion = 0;
 //  }
 
-   ventilacion = CO2 >= 500; //si la condición es verdadera, el resultado de ventilacion será true, caso contrario false.
+   ventilacion = CO2 >= CO2_LIMITE; //si la condición es verdadera, el resultado de ventilacion será true, caso contrario false.
   
   if(DEBUG){
   Serial.println(ventilacion);
