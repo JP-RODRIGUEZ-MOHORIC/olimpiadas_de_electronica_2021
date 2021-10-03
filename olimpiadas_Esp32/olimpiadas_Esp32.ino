@@ -2,15 +2,14 @@
 #include <Keypad.h>      // importa libreria Keypad
 #include <WiFi.h>        // Load Wi-Fi library
 #define DEBUG 0
-#define CONEXION 0
+#define CONEXION 1
 
 // Replace with your network credentials
 const char *ssid = "Leo mar juan";
 const char *password = "IVOM8264";
 
-String IP_addres = Wifi.localIP().toString().cstr();
-
-//String IP_addres = String WiFi.localIP();
+// IP_adress to string
+String IP_addres = WiFi.localIP().toString().c_str();
 
 // Set web server port number to 80
 WiFiServer server(80);
@@ -247,8 +246,7 @@ void LeerTeclado()
 
   if (INDICE == 6) // si ya se almacenaron los 6 digitos
   {
-    if (!strcmp(CLAV
-    E, CLAVE_MAESTRA_1) or !strcmp(CLAVE, CLAVE_MAESTRA_2) or !strcmp(CLAVE, CLAVE_MAESTRA_3) or !strcmp(CLAVE, CLAVE_MAESTRA_4) or !strcmp(CLAVE, CLAVE_MAESTRA_5) or !strcmp(CLAVE, CLAVE_MAESTRA_6))
+    if (!strcmp(CLAVE, CLAVE_MAESTRA_1) or !strcmp(CLAVE, CLAVE_MAESTRA_2) or !strcmp(CLAVE, CLAVE_MAESTRA_3) or !strcmp(CLAVE, CLAVE_MAESTRA_4) or !strcmp(CLAVE, CLAVE_MAESTRA_5) or !strcmp(CLAVE, CLAVE_MAESTRA_6))
     { // compara clave ingresada con clave maestra
       if (DEBUG)
       {
