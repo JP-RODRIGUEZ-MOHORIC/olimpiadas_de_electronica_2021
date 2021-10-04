@@ -1,100 +1,93 @@
-#include <ESP32Time.h>   // importa libreria para usar el RTC interno del ESP32
-#include <analogWrite.h> // importa libreria para usar analogWrite con ESP32
-#include <Keypad.h>      // importa libreria Keypad
-#include <WiFi.h>        /// importa libreria WiFi
+#include <ESP32Time.h>   // Load Esp32 RTC libbrary
+#include <analogWrite.h> // Load Esp32 analogwrite library
+#include <Keypad.h>      // Load Keypad library
+#include <WiFi.h>        // Load Wi-Fi library
 #define DEBUG 0
 #define CONECTION 1
 #define PORT 80
-// Conexion al wifi
+
+// Replace with your network credentials
 const char *ssid = "Leo mar juan";
 const char *WiFi_password = "IVOM8264";
 
-// Seteamos el server en el puerto 80
+// Set web server port number to 80
 WiFiServer server(PORT);
 
-// Variable para almacenar la peticion http
+// Variable to store the HTTP request
 String header;
 
 // Current time
 unsigned long currentTime = millis();
 // Previous time
 unsigned long previousTime = 0;
-// Define el tiempo de timeout en milisegundos (ejemplo: 2000ms = 2s)
+// Define timeout time in milliseconds (example: 2000ms = 2s)
 const long timeoutTime = 2000;
 
 //RTC
 ESP32Time rtc;
 String str_now;
 
-//Variables del sensor de CO2
+//CO2 Sensor variables
 #define THRSH 600      //750
 #define THRSL 500      //500
 #define THRS_ALARM 750 //900
-
-int CO2_Status;
-
 #define MQ135 35
 #define ON true
 #define OFF false
-
+int CO2_Status;
 int CO2;
 int CO2_final;
 bool ventilation_status = false;
 bool alarm_status = false;
 
-//Variables maquina de estado CO2
-
+//Finite-state Machine variables
 #define STDBY 1
 #define EXTRACCION 2
 #define ALARM 3
 
-//Conexion Motores
-
+//Motors
 #define MOTOR_IN 2
 #define MOTOR_OUT 4
 
-//Conexion buzzer
-
+//Buzzer
 #define BUZZER 15
 
-//Conexion led RGB
-
+//RGB Led
 #define PIN_RED 19
 #define PIN_GREEN 18
 #define PIN_BLUE 5
 
-//variables del keypad
-
+//Keypad variables
 #define RESET 0
 #define CORRECT 1
 #define INCORRECT 2
 
-const byte ROW = 4;        // define numero de filas
-const byte COLUMN = 4;     // define numero de columnas
-char keys[ROW][COLUMN] = { // define la distribucion de teclas
+const byte ROW = 4;        // Defines rows
+const byte COLUMN = 4;     // Defines columns
+char keys[ROW][COLUMN] = { // Defines keys distribution
     {'1', '2', '3', 'A'},
     {'4', '5', '6', 'B'},
     {'7', '8', '9', 'C'},
     {'*', '0', '#', 'D'}};
 
-byte rowpins[ROW] = {13, 12, 14, 27};       // pines correspondientes a las filas
-byte columnpins[COLUMN] = {26, 25, 33, 32}; // pines correspondientes a las columnas
+byte rowpins[ROW] = {13, 12, 14, 27};       // Row pins
+byte columnpins[COLUMN] = {26, 25, 33, 32}; // Column pins
 
-Keypad keypad = Keypad(makeKeymap(keys), rowpins, columnpins, ROW, COLUMN); // crea objeto
+Keypad keypad = Keypad(makeKeymap(keys), rowpins, columnpins, ROW, COLUMN); // Creates an object
 
-char key;         // almacena la tecla presionada
-char password[7]; // almacena en un array 6 digitos ingresados
+char key;         // Stores the pressed key
+char password[7]; // Stores in an array the 6 keys pressed
 int key_comprobation = 0;
-char master_key_1[7] = "147147"; // almacena en un array la contraseña maestra
-char master_key_2[7] = "369369"; // almacena en un array la contraseña maestra
-char master_key_3[7] = "912018"; // almacena en un array la contraseña maestra
-char master_key_4[7] = "266011"; // almacena en un array la contraseña maestra
-char master_key_5[7] = "503282"; // almacena en un array la contraseña maestra
-char master_key_6[7] = "123456"; // almacena en un array la contraseña maestra
+char master_key_1[7] = "147147"; // Stores in an array the correct password 1
+char master_key_2[7] = "369369"; // Stores in an array the correct password 2
+char master_key_3[7] = "912018"; // Stores in an array the correct password 3
+char master_key_4[7] = "266011"; // Stores in an array the correct password 4
+char master_key_5[7] = "503282"; // Stores in an array the correct password 5
+char master_key_6[7] = "123456"; // Stores in an array the correct password 6
 
-int index_keypad = 0; // indice del array
+int index_keypad = 0; // Array index
 
-//Estructura tabla
+//Table structure
 struct User
 {
   int id;
@@ -130,7 +123,7 @@ void setup()
   Serial.begin(115200);
   if (CONECTION)
   {
-    //Conecta a Wifi mediante ssid y passwor
+    //Connect to Wi-Fi network with SSID and password
     Serial.print("Connecting to ");
     Serial.println(ssid);
     WiFi.begin(ssid, WiFi_password);
@@ -140,7 +133,7 @@ void setup()
       Serial.print(".");
     }
 
-    // Imprime el IP local y inicia el servidor
+    //Print local IP address and start web server
     Serial.println("");
     Serial.println("WiFi connected.");
     Serial.println("IP address: ");
@@ -148,22 +141,23 @@ void setup()
     server.begin();
   }
 
-  //pines led rgb
+  //Set RGB led pins as OUTPUTS
   pinMode(PIN_RED, OUTPUT);
   pinMode(PIN_GREEN, OUTPUT);
   pinMode(PIN_BLUE, OUTPUT);
 
-  //inicializacion Mef_CO2
+  //Starts Finite-state machine
   green_led();
   CO2_Status = STDBY;
 
-  //Inicializacion Motores
+  //Set Motors as OUTPUTS
   pinMode(MOTOR_IN, OUTPUT);
   pinMode(MOTOR_OUT, OUTPUT);
 
-  //Inicializacion buzzer
+  //Set buzzer pin as OUTPUT
   pinMode(BUZZER, OUTPUT);
 
+  //Generate 6 users
   user_1 = GenerateUser(1);
   user_2 = GenerateUser(2);
   user_3 = GenerateUser(3);
@@ -171,6 +165,7 @@ void setup()
   user_5 = GenerateUser(5);
   user_6 = GenerateUser(6);
 
+  //Starts RTC
   RtcInit();
 }
 
@@ -185,7 +180,7 @@ void loop()
 
 void RtcInit()
 {
-  String meses[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
+  String months[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
   int mm = 1;
 
   int hh = String(__TIME__).substring(0, 2).toInt();
@@ -196,13 +191,13 @@ void RtcInit()
 
   for (int x = 0; x < 12; x++)
   {
-    if (meses[x] == mm_aux)
+    if (months[x] == mm_aux)
     {
       mm = x + 1;
       break;
     }
   }
-  rtc.setTime(00, mn, hh, dd, mm, yy); // (segundo, minutos, hora, dia, mes, año)
+  rtc.setTime(00, mn, hh, dd, mm, yy); // (seconds, minutes, hours, days, months, years)
 }
 
 void Rtc()
@@ -213,10 +208,10 @@ void Rtc()
 
 void LeerSensor()
 {
-  //Codigo deteccion del sensor
-  CO2 = analogRead(MQ135); //Leemos la salida analógica del MQ
+  //Sensor code
+  CO2 = analogRead(MQ135); //Read the sensor´s analogic pin
   CO2_final = map(CO2, 0, 4095, 0, 1023);
-  float voltaje = CO2_final * (5.0 / 1023.0); //Convertimos la lectura en un valor de voltaje
+  float voltaje = CO2_final * (5.0 / 1023.0); //Gets the equivalent in volts
   if (DEBUG)
   {
     Serial.print("adc:");
@@ -233,7 +228,8 @@ void Mef_CO2()
   {
   case STDBY:
     if (CO2_final > THRSH)
-    { //EVALUO SI EL NIVEL DE CO2 SUPERO EL PRIMER UMBRAL
+    { 
+      //Evaluates if CO2 level its over the limit
       Serial.println("Enciendo led Amarillo");
       CO2_Status = EXTRACCION;
       ventilation_status = ON;
@@ -253,7 +249,8 @@ void Mef_CO2()
     }
 
     if (CO2_final < THRSL)
-    { //EVALUO SI EL NIVEL DE CO2 ES MENOR AL UMBRAL MAS BAJO POR LO QUE PASO A MODO STDBY
+    { 
+      //Evaluates if CO2 level is lower than the limit and sets the FSM in STDBY mode. 
       Serial.println("Enciendo led Verde");
       CO2_Status = STDBY;
       ventilation_status = OFF;
@@ -285,30 +282,30 @@ void green_led()
 
 void red_led()
 {
-  analogWrite(PIN_RED, 0);     //azul
-  analogWrite(PIN_GREEN, 255); //verde
+  analogWrite(PIN_RED, 0);     
+  analogWrite(PIN_GREEN, 255); 
   analogWrite(PIN_BLUE, 255);
 }
 
 void yellow_led()
 {
-  analogWrite(PIN_RED, 0); // en 0 se prende azul
+  analogWrite(PIN_RED, 0); 
   analogWrite(PIN_GREEN, 207);
   analogWrite(PIN_BLUE, 255);
 }
 
 void KeypadRead()
 {
-  //codigo keypad
-  key = keypad.getKey(); // obtiene tecla presionada y asigna a variable
-  if (key)               // comprueba que se haya presionado una tecla
+  //keypad code
+  key = keypad.getKey(); //Obtains the key pressed and asigns a variable
+  if (key)               //Checks that a key was pressed
   {
-    password[index_keypad] = key; // almacena en array la tecla presionada
-    index_keypad++;               // incrementa indice en uno
-    Serial.print(key);            // envia a monitor serial la tecla presionada
+    password[index_keypad] = key; //Stores in the array the key pressed
+    index_keypad++;               //Increases the index + 1
+    Serial.print(key);            //Sends to the serial monitor the key pressed
   }
 
-  if (index_keypad == 6) // si ya se almacenaron los 6 digitos
+  if (index_keypad == 6) //Evaluates if there are 6 keys stored
   {
     Autentification();
   }
@@ -318,7 +315,7 @@ void KeypadRead()
 void Autentification()
 {
   if (!strcmp(password, master_key_1) or !strcmp(password, master_key_2) or !strcmp(password, master_key_3) or !strcmp(password, master_key_4) or !strcmp(password, master_key_5) or !strcmp(password, master_key_6))
-  { // compara clave ingresada con clave maestra
+  { //Compares the password whith the correct passwords
 
     Serial.print("Inicio de session:");
     Serial.println(Users_login_count);
@@ -364,7 +361,7 @@ void Autentification()
 
 void Logout()
 {
-  if (key == 'A') //Si apretamos la tecla A reseteamos los valores a 0 e ingresamos la contraseña nuevamente.
+  if (key == 'A') //"A" Key restart the count and forces to type the password again
   {
     if (DEBUG)
     {
@@ -382,27 +379,27 @@ void Logout()
 
 void Server()
 {
-  /****************************Servidor*****************************************/
-  WiFiClient client = server.available(); // Listen for incoming clients
+  //Server
+  WiFiClient client = server.available(); //Listen for incoming clients
 
   if (client)
-  { // Si se conecta alguien,
+  { // //If a new client connects,
     currentTime = millis();
     previousTime = currentTime;
-    //  Serial.println("New Client."); // Imprime un mensaje en el puerto serial
-    String currentLine = ""; // make a String to hold incoming data from the client
+    //  Serial.println("New Client."); //print a message out in the serial port
+    String currentLine = ""; //make a String to hold incoming data from the client
     while (client.connected() && currentTime - previousTime <= timeoutTime)
-    { // loop while the client's connected
+    { //loop while the client's connected
       currentTime = millis();
       if (client.available())
-      {                         // if there's bytes to read from the client,
-        char c = client.read(); // read a byte, then
-        Serial.write(c);        // print it out the serial monitor
+      {                         //if there's bytes to read from the client,
+        char c = client.read(); //read a byte, then
+        Serial.write(c);        //print it out the serial monitor
         header += c;
         if (c == '\n')
-        { // if the byte is a newline character
-          // if the current line is blank, you got two newline characters in a row.
-          // that's the end of the client HTTP request, so send a response:
+        { //if the byte is a newline character
+          //if the current line is blank, you got two newline characters in a row.
+          //that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0)
           {
 
@@ -428,7 +425,7 @@ void Server()
               client.println(F("<h1>Ingresar contraseña<h1>"));
             }
 
-            /***************************TABLA********************************/
+            //Table
             if (key_comprobation == CORRECT)
             {
               HtmlTableUsersSession(client);
@@ -445,21 +442,21 @@ void Server()
             break;
           }
           else
-          { // if you got a newline, then clear currentLine
+          { //If you got a newline, then clear currentLine
             currentLine = "";
           }
         }
         else if (c != '\r')
-        {                   // if you got anything else but a carriage return character,
-          currentLine += c; // add it to the end of the currentLine
+        {                   //If you got anything else but a carriage return character,
+          currentLine += c; //Add it to the end of the currentLine
         }
       }
     }
-    // Clear the header variable
+    //Clear the header variable
     header = "";
-    // Close the connection
+    //Close the connection
     client.stop();
-    // Serial.println("Client disconnected.");
+    //Serial.println("Client disconnected.");
     //Serial.println("");
   }
 }
