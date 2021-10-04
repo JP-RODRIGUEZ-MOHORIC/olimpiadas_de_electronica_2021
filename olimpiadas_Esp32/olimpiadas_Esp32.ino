@@ -1,27 +1,24 @@
 #include <analogWrite.h> // importa libreria para usar analogWrite con ESP32
 #include <Keypad.h>      // importa libreria Keypad
-#include <WiFi.h>        // Load Wi-Fi library
+#include <WiFi.h>        /// importa libreria WiFi
 #define DEBUG 0
 #define CONEXION 1
 
-// Replace with your network credentials
+// Conexion al wifi
 const char *ssid = "Leo mar juan";
 const char *password = "IVOM8264";
 
-// IP_adress to string
-String IP_addres = WiFi.localIP().toString().c_str();
-
-// Set web server port number to 80
+// Seteamos el server en el puerto 80
 WiFiServer server(80);
 
-// Variable to store the HTTP request
+// Variable para almacenar la peticion http
 String header;
 
 // Current time
 unsigned long currentTime = millis();
 // Previous time
 unsigned long previousTime = 0;
-// Define timeout time in milliseconds (example: 2000ms = 2s)
+// Define el tiempo de timeout en milisegundos (ejemplo: 2000ms = 2s)
 const long timeoutTime = 2000;
 
 //Variables del sensor de CO2
@@ -93,16 +90,38 @@ char CLAVE_MAESTRA_6[7] = "123456"; // almacena en un array la contraseña maest
 byte INDICE = 0; // indice del array
 
 //Estructura tabla
-struct Registro
+struct Usuario
 {
   int id;
-  String espacio;
+  String habitacion;
   int ingreso;
   int egreso;
+  bool login = false;
 };
+
+Usuario Usuario_1 = Usuario();
+Usuario Usuario_2 = Usuario();
+Usuario Usuario_3 = Usuario();
+Usuario Usuario_4 = Usuario();
+Usuario Usuario_5 = Usuario();
+Usuario Usuario_6 = Usuario();
+
+int contador_usuarios_logeados = 0;
+Usuario sessiones[20];
+
+Usuario GenerarUsuario(int id)
+{
+  Usuario usuario = Usuario();
+  usuario.id = id;
+  usuario.habitacion = "Habitacion " + id;
+  usuario.ingreso = random(5, 20);
+  usuario.egreso = random(5, 20);
+  return usuario;
+}
 
 void setup()
 {
+
   Serial.begin(115200);
   if (CONEXION)
   {
@@ -140,7 +159,14 @@ void setup()
 
   //Inicializacion buzzer
   pinMode(BUZZER, OUTPUT);
-}
+
+  Usuario_1 = GenerarUsario(1);
+  Usuario_2 = GenerarUsario(2);
+  Usuario_3 = GenerarUsario(3);
+  Usuario_4 = GenerarUsario(4);
+  Usuario_5 = GenerarUsario(5);
+  Usuario_6 = GenerarUsario(6);
+
 
 void loop()
 {
@@ -155,7 +181,7 @@ void LeerSensor()
   CO2 = analogRead(mq135); //Leemos la salida analógica del MQ
   CO2_final = map(CO2, 0, 4095, 0, 1023);
   float voltaje = CO2_final * (5.0 / 1023.0); //Convertimos la lectura en un valor de voltaje
-  if (!DEBUG)
+  if (DEBUG)
   {
     Serial.print("adc:");
     Serial.print(CO2_final);
@@ -246,12 +272,45 @@ void LeerTeclado()
 
   if (INDICE == 6) // si ya se almacenaron los 6 digitos
   {
+
     if (!strcmp(CLAVE, CLAVE_MAESTRA_1) or !strcmp(CLAVE, CLAVE_MAESTRA_2) or !strcmp(CLAVE, CLAVE_MAESTRA_3) or !strcmp(CLAVE, CLAVE_MAESTRA_4) or !strcmp(CLAVE, CLAVE_MAESTRA_5) or !strcmp(CLAVE, CLAVE_MAESTRA_6))
     { // compara clave ingresada con clave maestra
       if (DEBUG)
       {
         Serial.println(" Correcta"); // imprime en monitor serial que es correcta la clave
       }
+      Serial.print("Inicio de session:");
+      Serial.println(contador_usuarios_logeados);
+      Usuario session = Usuario();
+
+      if (!strcmp(CLAVE, CLAVE_MAESTRA_1))
+      {
+        session = Usuario_1;
+      }
+      if (!strcmp(CLAVE, CLAVE_MAESTRA_2))
+      {
+        session = Usuario_2;
+      }
+      if (!strcmp(CLAVE, CLAVE_MAESTRA_3))
+      {
+        session = Usuario_3;
+      }
+      if (!strcmp(CLAVE, CLAVE_MAESTRA_4))
+      {
+        session = Usuario_4;
+      }
+      if (!strcmp(CLAVE, CLAVE_MAESTRA_5))
+      {
+        session = Usuario_5;
+      }
+      if (!strcmp(CLAVE, CLAVE_MAESTRA_6))
+      {
+        session = Usuario_6;
+      }
+      session.login = true;
+      sessiones[contador_usuarios_logeados] = session;
+      contador_usuarios_logeados++;
+      INDICE = 0;
       comprobacion_clave = CORRECTO;
     }
     else
@@ -281,44 +340,6 @@ void LeerTeclado()
 
 void Server()
 {
-  /****************************Datos Tabla*****************************************/
-  Registro Usuario_1;
-  Usuario_1.id = 1;
-  Usuario_1.espacio = "Habitacion 1";
-  Usuario_1.ingreso = 10;
-  Usuario_1.egreso = 15;
-
-  Registro Usuario_2;
-  Usuario_2.id = 2;
-  Usuario_2.espacio = "Habitacion 2";
-  Usuario_2.ingreso = 9;
-  Usuario_2.egreso = 12;
-
-  Registro Usuario_3;
-  Usuario_3.id = 3;
-  Usuario_3.espacio = "Habitacion 3";
-  Usuario_3.ingreso = 10;
-  Usuario_3.egreso = 12;
-
-  Registro Usuario_4;
-  Usuario_4.id = 4;
-  Usuario_4.espacio = "Habitacion 4";
-  Usuario_4.ingreso = 20;
-  Usuario_4.egreso = 32;
-
-  Registro Usuario_5;
-  Usuario_5.id = 5;
-  Usuario_5.espacio = "Habitacion 5";
-  Usuario_5.ingreso = 5;
-  Usuario_5.egreso = 52;
-
-  Registro Usuario_6;
-  Usuario_6.id = 6;
-  Usuario_6.espacio = "Habitacion 6";
-  Usuario_6.ingreso = 8;
-  Usuario_6.egreso = 43;
-
-  
   /****************************Servidor*****************************************/
   WiFiClient client = server.available(); // Listen for incoming clients
 
@@ -326,8 +347,8 @@ void Server()
   { // If a new client connects,
     currentTime = millis();
     previousTime = currentTime;
-    Serial.println("New Client."); // print a message out in the serial port
-    String currentLine = "";       // make a String to hold incoming data from the client
+    //  Serial.println("New Client."); // print a message out in the serial port
+    String currentLine = ""; // make a String to hold incoming data from the client
     while (client.connected() && currentTime - previousTime <= timeoutTime)
     { // loop while the client's connected
       currentTime = millis();
@@ -352,13 +373,16 @@ void Server()
             //client.println(F("Refresh:0")); //Refresca la pagina automaticamente cada x tiempo
             String box_css = "display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;";
             String table_css = "background-color: darkblue; text-align: center; font-size: 25px;";
+
             client.println();
             client.println(F("<html>"));
             client.println(F("<head>"));
             client.println(F("<meta charset='UTF-8'>"));
             client.println(F("<title>Panel de Control</title>"));
+            WebRefresh(client);
+
             client.println(F("</head>"));
-            client.println(F("<body style='background-color: #333; color: #fff;'>"));
+            client.println(F("<body onload='GetSwitchState()' id =  'switch_txt' style='background-color: #333; color: #fff;'>"));
             client.println(F("<div style='display: flex; justify-content: space-between; height: 80vh;'>"));
             client.println(F("<div style='text-align: center; width: 40%; padding-top: 100px; border-bottom: 2px solid white;'>"));
             client.println(F("<p style='font-size: 40px; font-weight: bold;'>Sensor de CO2</p>"));
@@ -379,21 +403,19 @@ void Server()
             client.println(F("</div>"));
             client.println(F("<div>"));
             client.println(F("<p>Ventiladores</p>"));
+            client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; padding: 5px; width: 100px; color: black; background-color: #fff;'>"));
             if (ventilacion == ON)
             {
-              client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; padding: 5px; width: 100px; color: black; background-color: #fff;'>on</p>"));
+              client.println("on");
             }
             if (ventilacion == OFF)
             {
-              client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; padding: 5px; width: 100px; color: black; background-color: #fff;'>off</p>"));
+              client.println("off");
             }
+            client.println(F("</p>"));
             client.println(F("</div>"));
             client.println(F("</div>"));
             client.println(F("</div>"));
-            client.print(F("<a href="));
-            client.print(IP_addres);
-            client.println(F(" style='display: inline-block; text-decoration: none; color: white; font-size: 20px; padding: 20px; border: 2px solid white;  margin-top: 15px; width:97%; text-align: center; background-color: black;'>Refrescar</a>"));
-
 
             if (comprobacion_clave == 0)
             {
@@ -416,162 +438,12 @@ void Server()
               client.println(F("<th>Estado del Bus</th>"));
               client.println(F("</thead>"));
               client.println(F("<tbody style='text-align: center;'>"));
-
-              if (!strcmp(CLAVE, CLAVE_MAESTRA_1))
+              for (Usuario session : sessiones)
               {
-                client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.espacio);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.ingreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.egreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_1.id);
-                client.println(F("</td>"));
-                client.println(F("</tr>"));
-              }
-              if (!strcmp(CLAVE, CLAVE_MAESTRA_2))
-              {
-                client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.espacio);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.ingreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.egreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_2.id);
-                client.println(F("</td>"));
-                client.println(F("</tr>"));
-              }
-              if (!strcmp(CLAVE, CLAVE_MAESTRA_3))
-              {
-                client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.espacio);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.ingreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.egreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_3.id);
-                client.println(F("</td>"));
-                client.println(F("</tr>"));
-              }
-              if (!strcmp(CLAVE, CLAVE_MAESTRA_4))
-              {
-                client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.espacio);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.ingreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.egreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_4.id);
-                client.println(F("</td>"));
-                client.println(F("</tr>"));
-              }
-              if (!strcmp(CLAVE, CLAVE_MAESTRA_5))
-              {
-                client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.espacio);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.ingreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.egreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_5.id);
-                client.println(F("</td>"));
-                client.println(F("</tr>"));
-              }
-              if (!strcmp(CLAVE, CLAVE_MAESTRA_6))
-              {
-                client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.espacio);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.ingreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.egreso);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.id);
-                client.println(F("</td>"));
-                client.println(F("<td>"));
-                client.println(Usuario_6.id);
-                client.println(F("</td>"));
-                client.println(F("</tr>"));
+                if (session.login)
+                {
+                  HtmlTableUser(client, session);
+                }
               }
               client.println(F("</tbody>"));
               client.println(F("</table>"));
@@ -585,6 +457,7 @@ void Server()
 
             client.println(F("</body>"));
             client.println(F("</html>"));
+
             break;
           }
           else
@@ -602,7 +475,50 @@ void Server()
     header = "";
     // Close the connection
     client.stop();
-    Serial.println("Client disconnected.");
-    Serial.println("");
+    // Serial.println("Client disconnected.");
+    //Serial.println("");
   }
+}
+
+void WebRefresh(WiFiClient client)
+{
+  client.println(F("<script>"));
+  client.println(F("function GetSwitchState(){nocache = '&nocache=' + Math.random() * 1000000;"));
+  client.println(F("var request = new XMLHttpRequest();"));
+  client.println(F("request.onreadystatechange = function(){"));
+  client.println(F("  if(this.readyState == 4){"));
+  client.println(F("if(this.status == 200){"));
+  client.println(F("if(this.responseText != null){"));
+  client.println(F("document.getElementById('switch_txt').innerHTML = this.responseText;}}}}"));
+  client.println(F("request.open('GET', 'ajax_switch' + nocache, true);"));
+  client.println(F("request.send(null);"));
+  client.println(F("setTimeout('GetSwitchState()', 1000);}"));
+  client.println(F("</script>"));
+}
+
+void HtmlTableUser(WiFiClient client, Usuario usuario)
+{
+  client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
+  client.println(F("<td>"));
+  client.println(usuario.id);
+  client.println(F("</td>"));
+  client.println(F("<td>"));
+  client.println(usuario.habitacion);
+  client.println(F("</td>"));
+  client.println(F("<td>"));
+  client.println(usuario.ingreso);
+  client.println(F("</td>"));
+  client.println(F("<td>"));
+  client.println(usuario.egreso);
+  client.println(F("</td>"));
+  client.println(F("<td>"));
+  client.println(usuario.id);
+  client.println(F("</td>"));
+  client.println(F("<td>"));
+  client.println(usuario.id);
+  client.println(F("</td>"));
+  client.println(F("<td>"));
+  client.println(usuario.id);
+  client.println(F("</td>"));
+  client.println(F("</tr>"));
 }
