@@ -1,4 +1,4 @@
-#include <ESP32Time.h> // importa libreria para usar el RTC interno del ESP32
+#include <ESP32Time.h>   // importa libreria para usar el RTC interno del ESP32
 #include <analogWrite.h> // importa libreria para usar analogWrite con ESP32
 #include <Keypad.h>      // importa libreria Keypad
 #include <WiFi.h>        /// importa libreria WiFi
@@ -15,7 +15,6 @@ WiFiServer server(PORT);
 // Variable para almacenar la peticion http
 String header;
 
-
 // Current time
 unsigned long currentTime = millis();
 // Previous time
@@ -24,7 +23,7 @@ unsigned long previousTime = 0;
 const long timeoutTime = 2000;
 
 //RTC
-ESP32Time rtc; 
+ESP32Time rtc;
 String str_now;
 
 //Variables del sensor de CO2
@@ -70,8 +69,8 @@ bool alarm_status = false;
 #define CORRECT 1
 #define INCORRECT 2
 
-const byte ROW = 4;          // define numero de filas
-const byte COLUMN = 4;       // define numero de columnas
+const byte ROW = 4;        // define numero de filas
+const byte COLUMN = 4;     // define numero de columnas
 char keys[ROW][COLUMN] = { // define la distribucion de teclas
     {'1', '2', '3', 'A'},
     {'4', '5', '6', 'B'},
@@ -83,7 +82,7 @@ byte columnpins[COLUMN] = {26, 25, 33, 32}; // pines correspondientes a las colu
 
 Keypad keypad = Keypad(makeKeymap(keys), rowpins, columnpins, ROW, COLUMN); // crea objeto
 
-char key;    // almacena la tecla presionada
+char key;         // almacena la tecla presionada
 char password[7]; // almacena en un array 6 digitos ingresados
 int key_comprobation = 0;
 char master_key_1[7] = "147147"; // almacena en un array la contraseña maestra
@@ -177,39 +176,40 @@ void setup()
 
 void loop()
 {
-  
+
   Rtc();
   Mef_CO2();
   KeypadRead();
   Server();
 }
 
-void RtcInit(){
-  String meses[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+void RtcInit()
+{
+  String meses[] = {"Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"};
   int mm = 1;
-  
+
   int hh = String(__TIME__).substring(0, 2).toInt();
   int mn = String(__TIME__).substring(3, 5).toInt();
   int dd = String(__DATE__).substring(4, 6).toInt();
   String mm_aux = String(__DATE__).substring(0, 3);
   int yy = String(__DATE__).substring(7, 11).toInt();
 
-  for(int x = 0; x < 12; x++){
-    if(meses[x]==mm_aux){
-      mm = x+1;
+  for (int x = 0; x < 12; x++)
+  {
+    if (meses[x] == mm_aux)
+    {
+      mm = x + 1;
       break;
-      }
     }
-    rtc.setTime(00, mn, hh, dd, mm, yy);  // (segundo, minutos, hora, dia, mes, año)
   }
-
-  
+  rtc.setTime(00, mn, hh, dd, mm, yy); // (segundo, minutos, hora, dia, mes, año)
+}
 
 void Rtc()
 {
-   str_now = rtc.getTime("%d/%m/%Y %H:%M:%S ");
+  str_now = rtc.getTime("%d/%m/%Y %H:%M:%S ");
   Serial.println(str_now);
-  }
+}
 
 void LeerSensor()
 {
@@ -285,7 +285,7 @@ void green_led()
 
 void red_led()
 {
-  analogWrite(PIN_RED, 0);   //azul
+  analogWrite(PIN_RED, 0);     //azul
   analogWrite(PIN_GREEN, 255); //verde
   analogWrite(PIN_BLUE, 255);
 }
@@ -301,11 +301,11 @@ void KeypadRead()
 {
   //codigo keypad
   key = keypad.getKey(); // obtiene tecla presionada y asigna a variable
-  if (key)                // comprueba que se haya presionado una tecla
+  if (key)               // comprueba que se haya presionado una tecla
   {
     password[index_keypad] = key; // almacena en array la tecla presionada
-    index_keypad++;              // incrementa indice en uno
-    Serial.print(key);   // envia a monitor serial la tecla presionada
+    index_keypad++;               // incrementa indice en uno
+    Serial.print(key);            // envia a monitor serial la tecla presionada
   }
 
   if (index_keypad == 6) // si ya se almacenaron los 6 digitos
@@ -432,7 +432,7 @@ void Server()
             if (key_comprobation == CORRECT)
             {
               HtmlTableUsersSession(client);
-              client.println(F("<a href='#' download style='width: 50px; height: 50px;margin-left: 290px; font-size: 30px; color: #fff;'>Descargar datos de la tabla</a>"));
+              HtmlTableDownload(client);
             }
 
             if (key_comprobation == INCORRECT)
@@ -467,6 +467,7 @@ void Server()
 void WebRefresh(WiFiClient client)
 {
   client.println(F("<script>"));
+  HtmlScriptDownloadTable(client);
   client.println(F("function GetSwitchState(){nocache = '&nocache=' + Math.random() * 1000000;"));
   client.println(F("var request = new XMLHttpRequest();"));
   client.println(F("request.onreadystatechange = function(){"));
@@ -477,6 +478,7 @@ void WebRefresh(WiFiClient client)
   client.println(F("request.open('GET', 'ajax_switch' + nocache, true);"));
   client.println(F("request.send(null);"));
   client.println(F("setTimeout('GetSwitchState()', 1000);}"));
+
   client.println(F("</script>"));
 }
 
@@ -548,17 +550,47 @@ void HtmlTableUserRow(WiFiClient client, User user)
 
 void HtmlTableUsersSession(WiFiClient client)
 {
-  client.println(F("<h1>Contraseña Correcta, Bienvenido<h1>"));
-  client.println(F("<h1 style='text-align: center;'>Panel de Control</h1>"));
-  client.println(F("<table style='margin: auto; margin-top: 10px; background-color: #fff; text-align: center;height: 500px; width: 900px; border: 2px solid #fff; border-top: none;'>"));
-  client.println(F("<caption style='background-color: darkblue; text-align: center; font-size: 25px;border: solid 4px #fff; border-bottom: none;'>Tabla de Datos</caption>"));
-  client.println(F("<thead style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-  client.println(F("<th>ID</th>"));
-  client.println(F("<th>Ingreso</th>"));
-  client.println(F("<th>Nivel Co2</th>"));
-  client.println(F("<th>Estado del sistema</th>"));
-  client.println(F("</thead>"));
-  client.println(F("<tbody style='text-align: center;'>"));
+
+  client.print(F(
+      "    <h1>Contraseña Correcta, Bienvenido</h1>"
+      "    <h1 style='text-align: center'>Panel de Control</h1>"
+      "    <div id='table_element'>"
+      "      <table"
+      "        style='"
+      "          margin: auto;"
+      "          margin-top: 10px;"
+      "          background-color: #fff;"
+      "          text-align: center;"
+      "          height: 500px;"
+      "          width: 900px;"
+      "          border: 2px solid #fff;"
+      "          border-top: none;"
+      "        '"
+      "      >"
+      "        <caption"
+      "          style='"
+      "            background-color: darkblue;"
+      "            text-align: center;"
+      "            font-size: 25px;"
+      "            border: solid 4px #fff;"
+      "            border-bottom: none;"
+      "          '"
+      "        >"
+      "          Tabla de Datos"
+      "        </caption>"
+      "        <thead"
+      "          style='"
+      "            background-color: darkblue;"
+      "            text-align: center;"
+      "            font-size: 25px;"
+      "          '"
+      "        >"
+      "          <th>ID</th>"
+      "          <th>Ingreso</th>"
+      "          <th>Nivel Co2</th>"
+      "          <th>Estado del sistema</th>"
+      "        </thead>"
+      "        <tbody style='text-align: center'>"));
   for (User session : sessions)
   {
     //Si existe usuarios logeados. Muestro su informacion en la table.
@@ -567,6 +599,36 @@ void HtmlTableUsersSession(WiFiClient client)
       HtmlTableUserRow(client, session);
     }
   }
-  client.println(F("</tbody>"));
-  client.println(F("</table>"));
+  client.print(F("</tbody>"
+                 "      </table>"
+                 "    </div>"));
+}
+
+void HtmlScriptDownloadTable(WiFiClient client)
+{
+  client.println(F(
+      "function downloadTable(){"
+      "   const tableElement = document.getElementById('table_element').innerHTML;"
+      "   const bodyElement = document.body.innerHTML;"
+      "   document.body.innerHTML = tableElement;"
+      "   window.print();"
+      "   document.body.innerHTML = bodyElement;"
+      "}"));
+}
+
+void HtmlTableDownload(WiFiClient client)
+{
+  client.println(F(
+      "<a"
+      "  onclick='downloadTable()'"
+      "  style='"
+      "    width: 50px;"
+      "    height: 50px;"
+      "    margin-left: 290px;"
+      "    font-size: 30px;"
+      "    color: #fff;"
+      "    cursor: pointer;"
+      "  '>"
+      "  Descargar datos de la tabla"
+      "</a>"));
 }
