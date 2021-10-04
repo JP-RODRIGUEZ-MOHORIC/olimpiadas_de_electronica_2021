@@ -29,7 +29,7 @@ const long timeoutTime = 2000;
 #define THRSL 500      //500
 #define THRS_ALARM 750 //900
 
-#define mq135 0
+#define mq135 35
 #define ON 1
 #define OFF 0
 
@@ -363,7 +363,7 @@ void Server()
             client.println(F("<div style='text-align: center; width: 40%; padding-top: 100px; border-bottom: 2px solid white;'>"));
             client.println(F("<p style='font-size: 40px; font-weight: bold;'>Sensor de CO2</p>"));
             client.println(F("<div style='display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;font-size: 50px;  width: 200px; height: 100px;'><p style='margin-top: 18px;'>"));
-            client.println(CO2);
+            client.println(CO2_final);
             client.println(F("</p></div>"));
             client.println(F("</div>"));
             client.println(F("<div style='display: flex; flex-direction: column; text-align: center; margin-right: auto; margin-left: auto; font-size: 25px; width: 100%; border-left: 2px solid white;  border-bottom: 2px solid white;'>"));
