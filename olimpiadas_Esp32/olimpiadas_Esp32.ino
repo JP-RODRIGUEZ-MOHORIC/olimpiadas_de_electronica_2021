@@ -3,13 +3,13 @@
 #include <WiFi.h>        /// importa libreria WiFi
 #define DEBUG 0
 #define CONEXION 1
-
+#define PORT 80
 // Conexion al wifi
 const char *ssid = "Leo mar juan";
-const char *password = "IVOM8264";
+const char *WiFi_password = "IVOM8264";
 
 // Seteamos el server en el puerto 80
-WiFiServer server(80);
+WiFiServer server(PORT);
 
 // Variable para almacenar la peticion http
 String header;
@@ -26,22 +26,22 @@ const long timeoutTime = 2000;
 #define THRSL 500      //500
 #define THRS_ALARM 750 //900
 
-#define mq135 35
-#define ON 1
-#define OFF 0
+#define MQ135 35
+#define ON true
+#define OFF false
 
-int estado_sensor;
 int CO2;
 int CO2_final;
-bool ventilacion = 0;
+bool ventilation_status = false;
+bool alarm_status = false;
 
 //Variables maquina de estado CO2
 
 #define STDBY 1
 #define EXTRACCION 2
-#define ALARMA 3
+#define ALARM 3
 
-int estado_CO2;
+int CO2_Status;
 
 //Conexion Motores
 
@@ -54,43 +54,43 @@ int estado_CO2;
 
 //Conexion led RGB
 
-#define pinR 19
-#define pinG 18
-#define pinB 5
+#define PIN_RED 19
+#define PIN_GREEN 18
+#define PIN_BLUE 5
 
 //variables del keypad
 
 #define RESET 0
-#define CORRECTO 1
-#define INCORRECTO 2
+#define CORRECT 1
+#define INCORRECT 2
 
-const byte FILAS = 4;          // define numero de filas
-const byte COLUMNAS = 4;       // define numero de columnas
-char keys[FILAS][COLUMNAS] = { // define la distribucion de teclas
+const byte ROW = 4;          // define numero de filas
+const byte COLUMN = 4;       // define numero de columnas
+char keys[ROW][COLUMN] = { // define la distribucion de teclas
     {'1', '2', '3', 'A'},
     {'4', '5', '6', 'B'},
     {'7', '8', '9', 'C'},
     {'*', '0', '#', 'D'}};
 
-byte pinesFilas[FILAS] = {13, 12, 14, 27};       // pines correspondientes a las filas
-byte pinesColumnas[COLUMNAS] = {26, 25, 33, 32}; // pines correspondientes a las columnas
+byte rowpins[ROW] = {13, 12, 14, 27};       // pines correspondientes a las filas
+byte columnpins[COLUMN] = {26, 25, 33, 32}; // pines correspondientes a las columnas
 
-Keypad teclado = Keypad(makeKeymap(keys), pinesFilas, pinesColumnas, FILAS, COLUMNAS); // crea objeto
+Keypad keypad = Keypad(makeKeymap(keys), rowpins, columnpins, ROW, COLUMN); // crea objeto
 
-char TECLA;    // almacena la tecla presionada
-char CLAVE[7]; // almacena en un array 6 digitos ingresados
-int comprobacion_clave = 0;
-char CLAVE_MAESTRA_1[7] = "147147"; // almacena en un array la contraseña maestra
-char CLAVE_MAESTRA_2[7] = "369369"; // almacena en un array la contraseña maestra
-char CLAVE_MAESTRA_3[7] = "912018"; // almacena en un array la contraseña maestra
-char CLAVE_MAESTRA_4[7] = "266011"; // almacena en un array la contraseña maestra
-char CLAVE_MAESTRA_5[7] = "503282"; // almacena en un array la contraseña maestra
-char CLAVE_MAESTRA_6[7] = "123456"; // almacena en un array la contraseña maestra
+char key;    // almacena la tecla presionada
+char password[7]; // almacena en un array 6 digitos ingresados
+int key_comprobation = 0;
+char master_key_1[7] = "147147"; // almacena en un array la contraseña maestra
+char master_key_2[7] = "369369"; // almacena en un array la contraseña maestra
+char master_key_3[7] = "912018"; // almacena en un array la contraseña maestra
+char master_key_4[7] = "266011"; // almacena en un array la contraseña maestra
+char master_key_5[7] = "503282"; // almacena en un array la contraseña maestra
+char master_key_6[7] = "123456"; // almacena en un array la contraseña maestra
 
-byte INDICE = 0; // indice del array
+int index_keypad = 0; // indice del array
 
 //Estructura tabla
-struct Usuario
+struct User
 {
   int id;
   String habitacion;
@@ -99,24 +99,24 @@ struct Usuario
   bool login = false;
 };
 
-Usuario Usuario_1 = Usuario();
-Usuario Usuario_2 = Usuario();
-Usuario Usuario_3 = Usuario();
-Usuario Usuario_4 = Usuario();
-Usuario Usuario_5 = Usuario();
-Usuario Usuario_6 = Usuario();
+User user_1 = User();
+User user_2 = User();
+User user_3 = User();
+User user_4 = User();
+User user_5 = User();
+User user_6 = User();
 
-int contador_usuarios_logeados = 0;
-Usuario sessiones[20];
+int Users_login_count = 0;
+User sessions[20];
 
-Usuario GenerarUsuario(int id)
+User GenerateUser(int id)
 {
-  Usuario usuario = Usuario();
-  usuario.id = id;
-  usuario.habitacion = "Habitacion " + id;
-  usuario.ingreso = random(5, 20);
-  usuario.egreso = random(5, 20);
-  return usuario;
+  User user = User();
+  user.id = id;
+  user.habitacion = "Habitacion " + id;
+  user.ingreso = random(5, 20);
+  user.egreso = random(5, 20);
+  return user;
 }
 
 void setup()
@@ -125,17 +125,17 @@ void setup()
   Serial.begin(115200);
   if (CONEXION)
   {
-    //Connect to Wi-Fi network with SSID and password
+    //Conecta a Wifi mediante ssid y passwor
     Serial.print("Connecting to ");
     Serial.println(ssid);
-    WiFi.begin(ssid, password);
+    WiFi.begin(ssid, WiFi_password);
     while (WiFi.status() != WL_CONNECTED)
     {
       delay(500);
       Serial.print(".");
     }
 
-    // Print local IP address and start web server
+    // Imprime el IP local y inicia el servidor
     Serial.println("");
     Serial.println("WiFi connected.");
     Serial.println("IP address: ");
@@ -144,14 +144,13 @@ void setup()
   }
 
   //pines led rgb
-  pinMode(pinR, OUTPUT);
-  pinMode(pinG, OUTPUT);
-  pinMode(pinB, OUTPUT);
+  pinMode(PIN_RED, OUTPUT);
+  pinMode(PIN_GREEN, OUTPUT);
+  pinMode(PIN_BLUE, OUTPUT);
 
   //inicializacion Mef_CO2
-  led_verde();
-  digitalWrite(pinG, HIGH);
-  estado_CO2 = STDBY;
+  green_led();
+  CO2_Status = STDBY;
 
   //Inicializacion Motores
   pinMode(MOTOR_IN, OUTPUT);
@@ -160,25 +159,25 @@ void setup()
   //Inicializacion buzzer
   pinMode(BUZZER, OUTPUT);
 
-  Usuario_1 = GenerarUsario(1);
-  Usuario_2 = GenerarUsario(2);
-  Usuario_3 = GenerarUsario(3);
-  Usuario_4 = GenerarUsario(4);
-  Usuario_5 = GenerarUsario(5);
-  Usuario_6 = GenerarUsario(6);
-
+  user_1 = GenerateUser(1);
+  user_2 = GenerateUser(2);
+  user_3 = GenerateUser(3);
+  user_4 = GenerateUser(4);
+  user_5 = GenerateUser(5);
+  user_6 = GenerateUser(6);
+}
 
 void loop()
 {
   Mef_CO2();
-  LeerTeclado();
+  KeypadRead();
   Server();
 }
 
 void LeerSensor()
 {
   //Codigo deteccion del sensor
-  CO2 = analogRead(mq135); //Leemos la salida analógica del MQ
+  CO2 = analogRead(MQ135); //Leemos la salida analógica del MQ
   CO2_final = map(CO2, 0, 4095, 0, 1023);
   float voltaje = CO2_final * (5.0 / 1023.0); //Convertimos la lectura en un valor de voltaje
   if (DEBUG)
@@ -193,148 +192,152 @@ void LeerSensor()
 void Mef_CO2()
 {
   LeerSensor();
-  switch (estado_CO2)
+  switch (CO2_Status)
   {
   case STDBY:
     if (CO2_final > THRSH)
     { //EVALUO SI EL NIVEL DE CO2 SUPERO EL PRIMER UMBRAL
       Serial.println("Enciendo led Amarillo");
-      estado_CO2 = EXTRACCION;
-      ventilacion = ON;
+      CO2_Status = EXTRACCION;
+      ventilation_status = ON;
       digitalWrite(MOTOR_IN, HIGH);
       digitalWrite(MOTOR_OUT, HIGH);
-      led_amarillo();
+      yellow_led();
     }
     break;
   case EXTRACCION:
     if (CO2_final > THRS_ALARM)
     {
       Serial.println("Enciendo led rojo");
-      estado_CO2 = ALARMA;
+      CO2_Status = ALARM;
+      alarm_status = ON;
       digitalWrite(BUZZER, HIGH);
-      led_rojo();
+      red_led();
     }
 
     if (CO2_final < THRSL)
     { //EVALUO SI EL NIVEL DE CO2 ES MENOR AL UMBRAL MAS BAJO POR LO QUE PASO A MODO STDBY
       Serial.println("Enciendo led Verde");
-      estado_CO2 = STDBY;
-      ventilacion = OFF;
+      CO2_Status = STDBY;
+      ventilation_status = OFF;
       digitalWrite(MOTOR_IN, LOW);
       digitalWrite(MOTOR_OUT, LOW);
-      led_verde();
+      green_led();
     }
     break;
 
-  case ALARMA:
+  case ALARM:
     if (CO2_final < THRS_ALARM)
     {
       Serial.println("Enciendo led Amarillo");
-      estado_CO2 = EXTRACCION;
+      CO2_Status = EXTRACCION;
+      alarm_status = OFF;
       digitalWrite(BUZZER, LOW);
-      led_amarillo();
+      yellow_led();
     }
     break;
   }
 }
 
-void led_verde()
+void green_led()
 {
-  analogWrite(pinR, 255);
-  analogWrite(pinG, 0);
-  analogWrite(pinB, 255);
+  analogWrite(PIN_RED, 255);
+  analogWrite(PIN_GREEN, 0);
+  analogWrite(PIN_BLUE, 255);
 }
 
-void led_rojo()
+void red_led()
 {
-  analogWrite(pinR, 0);   //azul
-  analogWrite(pinG, 255); //verde
-  analogWrite(pinB, 255);
+  analogWrite(PIN_RED, 0);   //azul
+  analogWrite(PIN_GREEN, 255); //verde
+  analogWrite(PIN_BLUE, 255);
 }
 
-void led_amarillo()
+void yellow_led()
 {
-  analogWrite(pinR, 0); // en 0 se prende azul
-  analogWrite(pinG, 207);
-  analogWrite(pinB, 255);
+  analogWrite(PIN_RED, 0); // en 0 se prende azul
+  analogWrite(PIN_GREEN, 207);
+  analogWrite(PIN_BLUE, 255);
 }
 
-void LeerTeclado()
+void KeypadRead()
 {
   //codigo keypad
-  TECLA = teclado.getKey(); // obtiene tecla presionada y asigna a variable
-  if (TECLA)                // comprueba que se haya presionado una tecla
+  key = keypad.getKey(); // obtiene tecla presionada y asigna a variable
+  if (key)                // comprueba que se haya presionado una tecla
   {
-    CLAVE[INDICE] = TECLA; // almacena en array la tecla presionada
-    INDICE++;              // incrementa indice en uno
-    Serial.print(TECLA);   // envia a monitor serial la tecla presionada
+    password[index_keypad] = key; // almacena en array la tecla presionada
+    index_keypad++;              // incrementa indice en uno
+    Serial.print(key);   // envia a monitor serial la tecla presionada
   }
 
-  if (INDICE == 6) // si ya se almacenaron los 6 digitos
+  if (index_keypad == 6) // si ya se almacenaron los 6 digitos
   {
+    Autentification();
+  }
+  Logout();
+}
 
-    if (!strcmp(CLAVE, CLAVE_MAESTRA_1) or !strcmp(CLAVE, CLAVE_MAESTRA_2) or !strcmp(CLAVE, CLAVE_MAESTRA_3) or !strcmp(CLAVE, CLAVE_MAESTRA_4) or !strcmp(CLAVE, CLAVE_MAESTRA_5) or !strcmp(CLAVE, CLAVE_MAESTRA_6))
-    { // compara clave ingresada con clave maestra
-      if (DEBUG)
-      {
-        Serial.println(" Correcta"); // imprime en monitor serial que es correcta la clave
-      }
-      Serial.print("Inicio de session:");
-      Serial.println(contador_usuarios_logeados);
-      Usuario session = Usuario();
+void Autentification()
+{
+  if (!strcmp(password, master_key_1) or !strcmp(password, master_key_2) or !strcmp(password, master_key_3) or !strcmp(password, master_key_4) or !strcmp(password, master_key_5) or !strcmp(password, master_key_6))
+  { // compara clave ingresada con clave maestra
 
-      if (!strcmp(CLAVE, CLAVE_MAESTRA_1))
-      {
-        session = Usuario_1;
-      }
-      if (!strcmp(CLAVE, CLAVE_MAESTRA_2))
-      {
-        session = Usuario_2;
-      }
-      if (!strcmp(CLAVE, CLAVE_MAESTRA_3))
-      {
-        session = Usuario_3;
-      }
-      if (!strcmp(CLAVE, CLAVE_MAESTRA_4))
-      {
-        session = Usuario_4;
-      }
-      if (!strcmp(CLAVE, CLAVE_MAESTRA_5))
-      {
-        session = Usuario_5;
-      }
-      if (!strcmp(CLAVE, CLAVE_MAESTRA_6))
-      {
-        session = Usuario_6;
-      }
-      session.login = true;
-      sessiones[contador_usuarios_logeados] = session;
-      contador_usuarios_logeados++;
-      INDICE = 0;
-      comprobacion_clave = CORRECTO;
-    }
-    else
+    Serial.print("Inicio de session:");
+    Serial.println(Users_login_count);
+    User session = User();
+
+    if (!strcmp(password, master_key_1))
     {
-      if (DEBUG)
-      {
-        Serial.println(" Incorrecta"); // imprime en monitor serial que es incorrecta la clave
-      }
-      comprobacion_clave = INCORRECTO;
+      session = user_1;
     }
+    if (!strcmp(password, master_key_2))
+    {
+      session = user_2;
+    }
+    if (!strcmp(password, master_key_3))
+    {
+      session = user_3;
+    }
+    if (!strcmp(password, master_key_4))
+    {
+      session = user_4;
+    }
+    if (!strcmp(password, master_key_5))
+    {
+      session = user_5;
+    }
+    if (!strcmp(password, master_key_6))
+    {
+      session = user_6;
+    }
+    session.login = true;
+    sessions[Users_login_count] = session;
+    Users_login_count++;
+    index_keypad = 0;
+    key_comprobation = CORRECT;
   }
-  if (TECLA == 'A') //Si apretamos la tecla A reseteamos los valores a 0 e ingresamos la contraseña nuevamente.
+  else
+  {
+    key_comprobation = INCORRECT;
+  }
+}
+
+void Logout()
+{
+  if (key == 'A') //Si apretamos la tecla A reseteamos los valores a 0 e ingresamos la contraseña nuevamente.
   {
     if (DEBUG)
     {
       Serial.println(" ");
       Serial.println("Ingresar Contraseña");
     }
-    for (int x = 0; x < sizeof(CLAVE) / sizeof(CLAVE[0]); x++)
+    for (int x = 0; x < sizeof(password) / sizeof(password[0]); x++)
     {
-      CLAVE[x] = 0;
+      password[x] = 0;
     }
-    comprobacion_clave = RESET;
-    INDICE = 0;
+    key_comprobation = RESET;
+    index_keypad = 0;
   }
 }
 
@@ -344,10 +347,10 @@ void Server()
   WiFiClient client = server.available(); // Listen for incoming clients
 
   if (client)
-  { // If a new client connects,
+  { // Si se conecta alguien,
     currentTime = millis();
     previousTime = currentTime;
-    //  Serial.println("New Client."); // print a message out in the serial port
+    //  Serial.println("New Client."); // Imprime un mensaje en el puerto serial
     String currentLine = ""; // make a String to hold incoming data from the client
     while (client.connected() && currentTime - previousTime <= timeoutTime)
     { // loop while the client's connected
@@ -363,98 +366,40 @@ void Server()
           // that's the end of the client HTTP request, so send a response:
           if (currentLine.length() == 0)
           {
-            // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
-            // and a content-type so the client knows what's coming, then a blank line:
-            client.println("HTTP/1.1 200 OK");
-            client.println("Content-type:text/html");
-            client.println("Connection: close");
-            client.println();
 
-            //client.println(F("Refresh:0")); //Refresca la pagina automaticamente cada x tiempo
-            String box_css = "display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;";
-            String table_css = "background-color: darkblue; text-align: center; font-size: 25px;";
+            HtmlHeaders(client);
 
-            client.println();
             client.println(F("<html>"));
             client.println(F("<head>"));
             client.println(F("<meta charset='UTF-8'>"));
             client.println(F("<title>Panel de Control</title>"));
             WebRefresh(client);
-
             client.println(F("</head>"));
             client.println(F("<body onload='GetSwitchState()' id =  'switch_txt' style='background-color: #333; color: #fff;'>"));
-            client.println(F("<div style='display: flex; justify-content: space-between; height: 80vh;'>"));
-            client.println(F("<div style='text-align: center; width: 40%; padding-top: 100px; border-bottom: 2px solid white;'>"));
-            client.println(F("<p style='font-size: 40px; font-weight: bold;'>Sensor de CO2</p>"));
-            client.println(F("<div style='display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;font-size: 50px;  width: 200px; height: 100px;'><p style='margin-top: 18px;'>"));
-            client.println(CO2_final);
-            client.println(F("</p></div>"));
-            client.println(F("</div>"));
+            HtmlCo2View(client);
             client.println(F("<div style='display: flex; flex-direction: column; text-align: center; margin-right: auto; margin-left: auto; font-size: 25px; width: 100%; border-left: 2px solid white;  border-bottom: 2px solid white;'>"));
-            client.println(F("<div>"));
-            client.println(F("<p>Contraseña</p>"));
-            client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;padding: 5px; width: 100px; min-height: 25px;'>"));
-            client.println(CLAVE);
-            client.println(F("</p>"));
-            client.println(F("</div>"));
-            client.println(F("<div>"));
-            client.println(F("<p>Datos 2</p>"));
-            client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;padding: 5px; width: 100px;'>-</p>"));
-            client.println(F("</div>"));
-            client.println(F("<div>"));
-            client.println(F("<p>Ventiladores</p>"));
-            client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; padding: 5px; width: 100px; color: black; background-color: #fff;'>"));
-            if (ventilacion == ON)
-            {
-              client.println("on");
-            }
-            if (ventilacion == OFF)
-            {
-              client.println("off");
-            }
-            client.println(F("</p>"));
-            client.println(F("</div>"));
+            HtmlClaveView(client);
+            HtmlStatus(client, "Ventiladores", ventilation_status);
+            HtmlStatus(client, "Alarma", alarm_status);
             client.println(F("</div>"));
             client.println(F("</div>"));
 
-            if (comprobacion_clave == 0)
+            if (key_comprobation == RESET)
             {
               client.println(F("<h1>Ingresar contraseña<h1>"));
             }
+
             /***************************TABLA********************************/
-            if (comprobacion_clave == CORRECTO)
+            if (key_comprobation == CORRECT)
             {
-              client.println(F("<h1>Contraseña Correcta, Bienvenido<h1>"));
-              client.println(F("<h1 style='text-align: center;'>Panel de Control</h1>"));
-              client.println(F("<table style='margin: auto; margin-top: 10px; background-color: #fff; text-align: center;height: 500px; width: 750px; border: 2px solid #fff; border-top: none;'>"));
-              client.println(F("<caption style='background-color: darkblue; text-align: center; font-size: 25px;border: solid 4px #fff; border-bottom: none;'>Tabla de Datos</caption>"));
-              client.println(F("<thead style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
-              client.println(F("<th>ID</th>"));
-              client.println(F("<th>Nombre</th>"));
-              client.println(F("<th>Ingreso</th>"));
-              client.println(F("<th>Egreso</th>"));
-              client.println(F("<th>Ubicación</th>"));
-              client.println(F("<th>Estado del sistema</th>"));
-              client.println(F("<th>Estado del Bus</th>"));
-              client.println(F("</thead>"));
-              client.println(F("<tbody style='text-align: center;'>"));
-              for (Usuario session : sessiones)
-              {
-                if (session.login)
-                {
-                  HtmlTableUser(client, session);
-                }
-              }
-              client.println(F("</tbody>"));
-              client.println(F("</table>"));
+              HtmlTableUsersSession(client);
               client.println(F("<a href='#' download style='width: 50px; height: 50px;margin-left: 290px; font-size: 30px; color: #fff;'>Descargar datos de la tabla</a>"));
             }
 
-            if (comprobacion_clave == INCORRECTO)
+            if (key_comprobation == INCORRECT)
             {
               client.println(F("<h1>Contraseña Incorrecta<h1>"));
             }
-
             client.println(F("</body>"));
             client.println(F("</html>"));
 
@@ -496,29 +441,105 @@ void WebRefresh(WiFiClient client)
   client.println(F("</script>"));
 }
 
-void HtmlTableUser(WiFiClient client, Usuario usuario)
+void HtmlHeaders(WiFiClient client)
+{
+  // HTTP headers always start with a response code (e.g. HTTP/1.1 200 OK)
+  // and a content-type so the client knows what's coming, then a blank line:
+  client.println("HTTP/1.1 200 OK");
+  client.println("Content-type:text/html");
+  client.println("Connection: close");
+  client.println();
+  client.println();
+}
+
+void HtmlCo2View(WiFiClient client)
+{
+  client.println(F("<div style='display: flex; justify-content: space-between; height: 80vh;'>"));
+  client.println(F("<div style='text-align: center; width: 40%; padding-top: 100px; border-bottom: 2px solid white;'>"));
+  client.println(F("<p style='font-size: 40px; font-weight: bold;'>Sensor de CO2</p>"));
+  client.println(F("<div style='display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;font-size: 50px;  width: 200px; height: 100px;'><p style='margin-top: 18px;'>"));
+  client.println(CO2_final);
+  client.println(F("</p></div>"));
+  client.println(F("</div>"));
+}
+
+void HtmlClaveView(WiFiClient client)
+{
+  client.println(F("<div>"));
+  client.println(F("<p>Contraseña</p>"));
+  client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; background-color: #fff; color: black;padding: 5px; width: 100px; min-height: 25px;'>"));
+  client.println(password);
+  client.println(F("</p>"));
+  client.println(F("</div>"));
+}
+
+void HtmlStatus(WiFiClient client, String title, bool sensor)
+{
+  String colorOn = "#00ff00";
+  String colorOff = "#ff0000";
+  client.println(F("<div>"));
+  client.println(F("<p>"));
+  client.print(title);
+  client.println(F("</p>"));
+  client.println(F("<p style='display: inline-block; border: 2px solid black; border-radius: 10px; padding: 5px; width:100px; color: white; background-color:"));
+  client.print(sensor ? colorOn : colorOff);
+  client.println(F(";'>"));
+  client.print(sensor ? "on" : "off");
+  client.println(F("</p>"));
+  client.println(F("</div>"));
+}
+
+void HtmlTableUserRow(WiFiClient client, User user)
 {
   client.println(F("<tr style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
   client.println(F("<td>"));
-  client.println(usuario.id);
+  client.println(user.id);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(usuario.habitacion);
+  client.println(user.habitacion);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(usuario.ingreso);
+  client.println(user.ingreso);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(usuario.egreso);
+  client.println(user.egreso);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(usuario.id);
+  client.println(user.id);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(usuario.id);
+  client.println(user.id);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(usuario.id);
+  client.println(user.id);
   client.println(F("</td>"));
   client.println(F("</tr>"));
+}
+
+void HtmlTableUsersSession(WiFiClient client)
+{
+  client.println(F("<h1>Contraseña Correcta, Bienvenido<h1>"));
+  client.println(F("<h1 style='text-align: center;'>Panel de Control</h1>"));
+  client.println(F("<table style='margin: auto; margin-top: 10px; background-color: #fff; text-align: center;height: 500px; width: 750px; border: 2px solid #fff; border-top: none;'>"));
+  client.println(F("<caption style='background-color: darkblue; text-align: center; font-size: 25px;border: solid 4px #fff; border-bottom: none;'>Tabla de Datos</caption>"));
+  client.println(F("<thead style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
+  client.println(F("<th>ID</th>"));
+  client.println(F("<th>Nombre</th>"));
+  client.println(F("<th>Ingreso</th>"));
+  client.println(F("<th>Egreso</th>"));
+  client.println(F("<th>Ubicación</th>"));
+  client.println(F("<th>Estado del sistema</th>"));
+  client.println(F("<th>Estado del Bus</th>"));
+  client.println(F("</thead>"));
+  client.println(F("<tbody style='text-align: center;'>"));
+  for (User session : sessions)
+  {
+    //Si existe usuarios logeados. Muestro su informacion en la table.
+    if (session.login)
+    {
+      HtmlTableUserRow(client, session);
+    }
+  }
+  client.println(F("</tbody>"));
+  client.println(F("</table>"));
 }
