@@ -1,8 +1,9 @@
+#include <ESP32Time.h> // importa libreria para usar el RTC interno del ESP32
 #include <analogWrite.h> // importa libreria para usar analogWrite con ESP32
 #include <Keypad.h>      // importa libreria Keypad
 #include <WiFi.h>        /// importa libreria WiFi
 #define DEBUG 0
-#define CONEXION 1
+#define CONECTION 1
 #define PORT 80
 // Conexion al wifi
 const char *ssid = "Leo mar juan";
@@ -14,6 +15,7 @@ WiFiServer server(PORT);
 // Variable para almacenar la peticion http
 String header;
 
+
 // Current time
 unsigned long currentTime = millis();
 // Previous time
@@ -21,10 +23,16 @@ unsigned long previousTime = 0;
 // Define el tiempo de timeout en milisegundos (ejemplo: 2000ms = 2s)
 const long timeoutTime = 2000;
 
+//RTC
+ESP32Time rtc; 
+String str_now;
+
 //Variables del sensor de CO2
 #define THRSH 600      //750
 #define THRSL 500      //500
 #define THRS_ALARM 750 //900
+
+int CO2_Status;
 
 #define MQ135 35
 #define ON true
@@ -40,8 +48,6 @@ bool alarm_status = false;
 #define STDBY 1
 #define EXTRACCION 2
 #define ALARM 3
-
-int CO2_Status;
 
 //Conexion Motores
 
@@ -93,9 +99,9 @@ int index_keypad = 0; // indice del array
 struct User
 {
   int id;
-  String habitacion;
-  int ingreso;
-  int egreso;
+  String entrance;
+  int CO2_level;
+  String system_status;
   bool login = false;
 };
 
@@ -113,9 +119,9 @@ User GenerateUser(int id)
 {
   User user = User();
   user.id = id;
-  user.habitacion = "Habitacion " + id;
-  user.ingreso = random(5, 20);
-  user.egreso = random(5, 20);
+  user.entrance = str_now;
+  user.CO2_level = CO2_final;
+  user.system_status = "OK";
   return user;
 }
 
@@ -123,7 +129,7 @@ void setup()
 {
 
   Serial.begin(115200);
-  if (CONEXION)
+  if (CONECTION)
   {
     //Conecta a Wifi mediante ssid y passwor
     Serial.print("Connecting to ");
@@ -165,14 +171,45 @@ void setup()
   user_4 = GenerateUser(4);
   user_5 = GenerateUser(5);
   user_6 = GenerateUser(6);
+
+  RtcInit();
 }
 
 void loop()
 {
+  
+  Rtc();
   Mef_CO2();
   KeypadRead();
   Server();
 }
+
+void RtcInit(){
+  String meses[] = {"Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"};
+  int mm = 1;
+  
+  int hh = String(__TIME__).substring(0, 2).toInt();
+  int mn = String(__TIME__).substring(3, 5).toInt();
+  int dd = String(__DATE__).substring(4, 6).toInt();
+  String mm_aux = String(__DATE__).substring(0, 3);
+  int yy = String(__DATE__).substring(7, 11).toInt();
+
+  for(int x = 0; x < 12; x++){
+    if(meses[x]==mm_aux){
+      mm = x+1;
+      break;
+      }
+    }
+    rtc.setTime(00, mn, hh, dd, mm, yy);  // (segundo, minutos, hora, dia, mes, año)
+  }
+
+  
+
+void Rtc()
+{
+   str_now = rtc.getTime("%d/%m/%Y %H:%M:%S ");
+  Serial.println(str_now);
+  }
 
 void LeerSensor()
 {
@@ -312,6 +349,8 @@ void Autentification()
       session = user_6;
     }
     session.login = true;
+    session.CO2_level = CO2_final;
+    session.entrance = str_now;
     sessions[Users_login_count] = session;
     Users_login_count++;
     index_keypad = 0;
@@ -496,22 +535,13 @@ void HtmlTableUserRow(WiFiClient client, User user)
   client.println(user.id);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(user.habitacion);
+  client.println(user.entrance);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(user.ingreso);
+  client.println(user.CO2_level);
   client.println(F("</td>"));
   client.println(F("<td>"));
-  client.println(user.egreso);
-  client.println(F("</td>"));
-  client.println(F("<td>"));
-  client.println(user.id);
-  client.println(F("</td>"));
-  client.println(F("<td>"));
-  client.println(user.id);
-  client.println(F("</td>"));
-  client.println(F("<td>"));
-  client.println(user.id);
+  client.println(user.system_status);
   client.println(F("</td>"));
   client.println(F("</tr>"));
 }
@@ -520,16 +550,13 @@ void HtmlTableUsersSession(WiFiClient client)
 {
   client.println(F("<h1>Contraseña Correcta, Bienvenido<h1>"));
   client.println(F("<h1 style='text-align: center;'>Panel de Control</h1>"));
-  client.println(F("<table style='margin: auto; margin-top: 10px; background-color: #fff; text-align: center;height: 500px; width: 750px; border: 2px solid #fff; border-top: none;'>"));
+  client.println(F("<table style='margin: auto; margin-top: 10px; background-color: #fff; text-align: center;height: 500px; width: 900px; border: 2px solid #fff; border-top: none;'>"));
   client.println(F("<caption style='background-color: darkblue; text-align: center; font-size: 25px;border: solid 4px #fff; border-bottom: none;'>Tabla de Datos</caption>"));
   client.println(F("<thead style='background-color: darkblue; text-align: center; font-size: 25px;'>"));
   client.println(F("<th>ID</th>"));
-  client.println(F("<th>Nombre</th>"));
   client.println(F("<th>Ingreso</th>"));
-  client.println(F("<th>Egreso</th>"));
-  client.println(F("<th>Ubicación</th>"));
+  client.println(F("<th>Nivel Co2</th>"));
   client.println(F("<th>Estado del sistema</th>"));
-  client.println(F("<th>Estado del Bus</th>"));
   client.println(F("</thead>"));
   client.println(F("<tbody style='text-align: center;'>"));
   for (User session : sessions)
