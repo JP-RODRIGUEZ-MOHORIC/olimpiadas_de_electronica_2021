@@ -1,0 +1,266 @@
+EESchema Schematic File Version 4
+LIBS:Domotic Garden-cache
+EELAYER 29 0
+EELAYER END
+$Descr A4 11693 8268
+encoding utf-8
+Sheet 1 1
+Title ""
+Date ""
+Rev ""
+Comp ""
+Comment1 ""
+Comment2 ""
+Comment3 ""
+Comment4 ""
+$EndDescr
+$Comp
+L Domotic-Garden-rescue:HEADER_4-EESTN5-Regador-Leguizamon-rescue J1
+U 1 1 611FD0CE
+P 9800 2250
+F 0 "J1" H 9928 2303 60  0000 L CNN
+F 1 "RTC" H 9928 2197 60  0000 L CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x04_P2.54mm_Vertical" H 9800 2250 60  0001 C CNN
+F 3 "" H 9800 2250 60  0000 C CNN
+	1    9800 2250
+	1    0    0    -1  
+$EndComp
+$Comp
+L Domotic-Garden-rescue:Conn_01X03-EESTN5-Regador-Leguizamon-rescue J4
+U 1 1 6120248E
+P 9850 3800
+F 0 "J4" H 9928 3841 50  0000 L CNN
+F 1 "Módulo Relay" H 9928 3750 50  0000 L CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x03_P2.54mm_Vertical" H 9850 3800 50  0001 C CNN
+F 3 "" H 9850 3800 50  0001 C CNN
+	1    9850 3800
+	1    0    0    -1  
+$EndComp
+Text Label 9500 3200 2    50   ~ 0
+Digital_13
+Text Label 9500 3300 2    50   ~ 0
+GND
+Text Label 9500 3400 2    50   ~ 0
+VCC
+Text Label 9550 2400 2    50   ~ 0
+GND
+Text Label 9550 2300 2    50   ~ 0
+VCC
+Text Label 9550 2100 2    50   ~ 0
+Digital_22
+Text Label 9550 2200 2    50   ~ 0
+Digital_21
+Wire Wire Line
+	9550 2100 9700 2100
+Wire Wire Line
+	9550 2200 9700 2200
+Wire Wire Line
+	9550 2300 9700 2300
+Wire Wire Line
+	9550 2400 9700 2400
+Text Label 9500 3900 2    50   ~ 0
+GND
+Text Label 9500 3800 2    50   ~ 0
+VCC
+Text Label 9500 3700 2    50   ~ 0
+Digital_14
+Wire Wire Line
+	9500 3700 9650 3700
+Wire Wire Line
+	9500 3800 9650 3800
+Wire Wire Line
+	9500 3900 9650 3900
+$Comp
+L Domotic-Garden-rescue:HEADER_2-EESTN5-Regador-Leguizamon-rescue J2
+U 1 1 61206DC6
+P 9800 2750
+F 0 "J2" H 9928 2803 60  0000 L CNN
+F 1 "Boya" H 9928 2697 60  0000 L CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x02_P2.54mm_Vertical" H 9800 3000 60  0001 C CNN
+F 3 "" H 9800 3000 60  0000 C CNN
+	1    9800 2750
+	1    0    0    -1  
+$EndComp
+Text Label 9250 2800 2    50   ~ 0
+GND
+$Comp
+L Domotic-Garden-rescue:R-EESTN5-Regador-Leguizamon-rescue R1
+U 1 1 61207AF0
+P 9500 2700
+F 0 "R1" V 9315 2700 50  0000 C CNN
+F 1 "330" V 9406 2700 50  0000 C CNN
+F 2 "EESTN5:RES0.3" H 9500 2700 60  0001 C CNN
+F 3 "" H 9500 2700 60  0000 C CNN
+	1    9500 2700
+	0    1    1    0   
+$EndComp
+Text Label 9250 2600 2    50   ~ 0
+Digital_25
+Wire Wire Line
+	9250 2700 9350 2700
+Wire Wire Line
+	9600 2700 9700 2700
+Wire Wire Line
+	9250 2800 9700 2800
+Text Label 9250 2700 2    50   ~ 0
+VCC
+Wire Wire Line
+	9250 2600 9350 2600
+Wire Wire Line
+	9350 2600 9350 2700
+Connection ~ 9350 2700
+Wire Wire Line
+	9350 2700 9400 2700
+$Comp
+L Domotic-Garden-rescue:Conn_01x18_Female-Connector J5
+U 1 1 610AC185
+P 6950 2950
+F 0 "J5" H 6800 1950 50  0000 L CNN
+F 1 "Esp32" H 6750 1850 50  0000 L CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x18_P2.54mm_Vertical" H 6950 2950 50  0001 C CNN
+F 3 "~" H 6950 2950 50  0001 C CNN
+	1    6950 2950
+	1    0    0    -1  
+$EndComp
+$Comp
+L Domotic-Garden-rescue:Conn_01x18_Female-Connector J6
+U 1 1 610ADCC2
+P 7800 2950
+F 0 "J6" H 7700 1950 50  0000 C CNN
+F 1 "Esp32_Pin2" H 7700 1850 50  0000 C CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x18_P2.54mm_Vertical" H 7800 2950 50  0001 C CNN
+F 3 "~" H 7800 2950 50  0001 C CNN
+	1    7800 2950
+	-1   0    0    -1  
+$EndComp
+Text Label 5700 3150 0    50   ~ 0
+Digital_22
+Text Label 5700 3050 0    50   ~ 0
+Digital_21
+Text Label 4500 3650 0    50   ~ 0
+VCC
+Text Label 4500 3550 0    50   ~ 0
+GND
+Text Label 4500 3150 0    50   ~ 0
+Digital_13
+Text Label 4500 2950 0    50   ~ 0
+Digital_14
+Text Label 4500 2650 0    50   ~ 0
+Digital_25
+$Comp
+L Domotic-Garden-rescue:Conn_01X03-EESTN5-Regador-Leguizamon-rescue J3
+U 1 1 612FF40B
+P 9850 3300
+F 0 "J3" H 9928 3341 50  0000 L CNN
+F 1 "HW-103" H 9928 3250 50  0000 L CNN
+F 2 "Connector_PinSocket_2.54mm:PinSocket_1x03_P2.54mm_Vertical" H 9850 3300 50  0001 C CNN
+F 3 "" H 9850 3300 50  0001 C CNN
+	1    9850 3300
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9650 3300 9500 3300
+Wire Wire Line
+	9650 3200 9500 3200
+Wire Wire Line
+	9650 3400 9500 3400
+$Comp
+L EESTN5:HEADER_2 J7
+U 1 1 6130BB83
+P 9800 1750
+F 0 "J7" H 9928 1803 60  0000 L CNN
+F 1 "Alimentacion" H 9928 1697 60  0000 L CNN
+F 2 "EESTN5:BORNERA2_AZUL" H 9800 2000 60  0001 C CNN
+F 3 "" H 9800 2000 60  0000 C CNN
+	1    9800 1750
+	1    0    0    -1  
+$EndComp
+Text Label 9400 1250 2    50   ~ 0
+VCC
+Text Label 9400 1350 2    50   ~ 0
+GND
+$Comp
+L EESTN5:Conn_01X03 J8
+U 1 1 6130D04F
+P 9850 1350
+F 0 "J8" H 9928 1391 50  0000 L CNN
+F 1 "ON/OFF" H 9928 1300 50  0000 L CNN
+F 2 "EESTN5:Pin_Strip_3" H 9850 1350 50  0001 C CNN
+F 3 "" H 9850 1350 50  0001 C CNN
+	1    9850 1350
+	1    0    0    -1  
+$EndComp
+Wire Wire Line
+	9650 1350 9550 1350
+Wire Wire Line
+	9550 1350 9550 1700
+Wire Wire Line
+	9550 1700 9700 1700
+Wire Wire Line
+	9500 1250 9500 1800
+Wire Wire Line
+	9500 1800 9700 1800
+Wire Wire Line
+	9500 1250 9400 1250
+Connection ~ 9500 1250
+Wire Wire Line
+	9650 1250 9500 1250
+Wire Wire Line
+	9550 1350 9400 1350
+Connection ~ 9550 1350
+$Comp
+L EESTN5:Mounting_Hole H1
+U 1 1 61314898
+P 10700 1200
+F 0 "H1" H 10800 1200 50  0000 L CNN
+F 1 "Mounting_Hole" H 10700 1325 50  0001 C CNN
+F 2 "EESTN5:hole_3mm" H 10700 1200 60  0001 C CNN
+F 3 "" H 10700 1200 60  0001 C CNN
+	1    10700 1200
+	1    0    0    -1  
+$EndComp
+$Comp
+L EESTN5:Mounting_Hole H2
+U 1 1 61314EB0
+P 10700 1400
+F 0 "H2" H 10800 1400 50  0000 L CNN
+F 1 "Mounting_Hole" H 10700 1525 50  0001 C CNN
+F 2 "EESTN5:hole_3mm" H 10700 1400 60  0001 C CNN
+F 3 "" H 10700 1400 60  0001 C CNN
+	1    10700 1400
+	1    0    0    -1  
+$EndComp
+$Comp
+L EESTN5:Mounting_Hole H3
+U 1 1 61315813
+P 10700 1600
+F 0 "H3" H 10800 1600 50  0000 L CNN
+F 1 "Mounting_Hole" H 10700 1725 50  0001 C CNN
+F 2 "EESTN5:hole_3mm" H 10700 1600 60  0001 C CNN
+F 3 "" H 10700 1600 60  0001 C CNN
+	1    10700 1600
+	1    0    0    -1  
+$EndComp
+$Comp
+L EESTN5:Mounting_Hole H4
+U 1 1 61315819
+P 10700 1800
+F 0 "H4" H 10800 1800 50  0000 L CNN
+F 1 "Mounting_Hole" H 10700 1925 50  0001 C CNN
+F 2 "EESTN5:hole_3mm" H 10700 1800 60  0001 C CNN
+F 3 "" H 10700 1800 60  0001 C CNN
+	1    10700 1800
+	1    0    0    -1  
+$EndComp
+$Comp
+L EESTN5n2:ESP32_DevKit_V1_DOIT U1
+U 1 1 6131CC42
+P 5100 3150
+F 0 "U1" H 5100 4575 50  0000 C CNN
+F 1 "ESP32_DevKit_V1_DOIT" H 5100 4484 50  0000 C CNN
+F 2 "ESP32_DevKit_V1_DOIT:esp32_devkit_v1_doit" H 4650 4500 50  0001 C CNN
+F 3 "" H 4650 4500 50  0001 C CNN
+	1    5100 3150
+	1    0    0    -1  
+$EndComp
+$EndSCHEMATC
